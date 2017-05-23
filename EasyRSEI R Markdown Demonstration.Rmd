@@ -1,0 +1,137 @@
+---
+title: "Demonstration of Interactive Graph"
+author: "Adam Benson"
+date: "April 24, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(dplyr)
+library(ggplot2)
+library(plotly)
+
+# NOTES: echo = TRUE shows R code, include=FALSE surpresses R messages
+
+# NOTES: http://rmarkdown.rstudio.com/authoring_basics.html
+```
+
+## TRI Emissions for Crossett, Arkansas Facility
+
+These data are from TRI's EasyRSEI database and are displaying emissions for chemicals that were available in the TRI database and highlighted in the existing Arkansas Department of Health and ATSDR Health Report.
+
+Please note, the y-axis changes by chemical in the two graphs below. 
+
+```{r Load EasyRSEI Stack and Fugitive Air Emissions, echo=FALSE}
+
+#setwd("//Aa.ad.epa.gov/ord/RTP/USERS/A-D/abenso02/Net MyDocuments/EPA/Projects/Crossett, Arkansas/Data/RSEI")
+setwd("E:/EPA/Crossett/Interactive")
+
+gpair <- read.csv("GP_RSEI_air_all_data.csv", header=TRUE, stringsAsFactors=FALSE)
+
+# Exploring Data
+#data.frame(table(gpair$Chemical))    # 26 chemicals
+
+# Subset some specific chemicals for Stack and Fugitive Air Emissions
+
+chems <- c("Methanol", "Formaldehyde", "Phenol", "Toluene", "Methyl ethyl ketone",
+           "Acetaldehyde", "Cresol", "Ammonia") 
+                  # Not in RSEI (Benzene, cyclopentanone, chromium) though in list on pg. 3 of ADH + ATSDR
+                  # report under "constituents that can be found in GP Chemical Plant effluent
+gpairf <- subset(gpair, (Chemical %in% chems) & (MediaText == "1 Fugitive Air"))
+
+gpairs <- subset(gpair, (Chemical %in% chems) & (MediaText == "2 Stack Air"))
+
+
+```
+
+```{r EasyRSEI Stack Air Emissions TRI Pounds, echo=FALSE}
+
+# library(ggplot2)
+
+# Look at list of chems from GP Effluent List by TRI Pounds per year
+gs <- ggplot(data=gpairs, aes(x=Year, y=TRI.Pounds, color = Chemical)) +
+  geom_point(size=2) + geom_line(size=0.5) +
+  facet_grid(Chemical ~ ., scales="free_y") +
+        scale_y_continuous(labels=scales::comma) +
+        labs(title = "Reported TRI Stack Air Emissions (Lbs)")
+gs
+
+# http://stackoverflow.com/questions/10558918/ggplot-2-facet-grid-free-y-but-forcing-y-axis-to-be-rounded-to-nearest-whole-n
+
+```
+
+```{r EasyRSEI Fugitive Air Emissions TRI Pounds, echo=FALSE}
+
+# library(ggplot2)
+
+# TRI Lbs, Fugitive Air Emissions
+gf <- ggplot(data=gpairf, aes(x=Year, y=TRI.Pounds, color = Chemical)) +
+  geom_point(size=2) + geom_line(size=0.5) +
+  facet_grid(Chemical ~ ., scales="free_y") +
+        scale_y_continuous(labels=scales::comma) +
+        labs(title = "Reported TRI Fugitive Air Emissions (Lbs)")
+gf
+
+```
+
+
+
+## Interactive Version
+
+Below are the same data, only now displayed in an interactive format and a constant y-axis.
+
+Hover your cursor over the graph to see the chemical and exact number of pounds at each data point. 
+
+
+
+```{r EasyRSEI PLOTLY Interactive Product, echo=FALSE}
+
+##################
+# Air RSEI Data
+##################
+
+# library(dplyr)
+# library(ggplot2)
+# library(plotly)
+
+#setwd("//Aa.ad.epa.gov/ord/RTP/USERS/A-D/abenso02/Net MyDocuments/EPA/Projects/Crossett, Arkansas/Data/RSEI")
+setwd("E:/EPA/Crossett/Interactive")
+
+gpair <- read.csv("GP_RSEI_air_all_data.csv", header=TRUE, stringsAsFactors=FALSE)
+
+# Exploring Data
+#data.frame(table(gpair$Chemical))    # 26 chemicals
+
+# Subset some specific chemicals for Stack and Fugitive Air Emissions
+
+chems <- c("Methanol", "Formaldehyde", "Phenol", "Toluene", "Methyl ethyl ketone",
+           "Acetaldehyde", "Cresol", "Ammonia") 
+                  # Not in RSEI (Benzene, cyclopentanone, chromium) though in list on pg. 3 of ADH + ATSDR
+                  # report under "constituents that can be found in GP Chemical Plant effluent
+gpairf <- subset(gpair, (Chemical %in% chems) & (MediaText == "1 Fugitive Air"))
+
+gpairs <- subset(gpair, (Chemical %in% chems) & (MediaText == "2 Stack Air"))
+
+
+# Plot_ly() Method 1: Generate Plotly Using Piping, By Chemical with Dots and Lines
+pstack <- plot_ly(gpairs, x = ~Year, y = ~TRI.Pounds) %>%
+  add_markers(color = ~Chemical, alpha=0.8, showlegend=FALSE) %>%
+  add_lines(color = ~Chemical, alpha=0.6) %>%
+        layout(title = "Reported TRI Stack Emissions (Lbs)")  
+
+pfugitive <- plot_ly(gpairf, x = ~Year, y = ~TRI.Pounds) %>%
+  add_markers(color = ~Chemical, alpha=0.8, showlegend=FALSE) %>%
+  add_lines(color = ~Chemical, alpha=0.6) %>%
+        layout(title = "Reported TRI Fugitive Emissions (Lbs)")
+
+
+pstack  
+
+
+pfugitive
+
+
+```  
+
